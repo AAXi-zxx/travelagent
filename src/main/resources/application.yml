@@ -1,0 +1,73 @@
+spring:
+  application:
+    name: travel-ai-agent
+  profiles:
+    active: local
+# 临时注释掉，便于大家开发调试和部署（实际填写 PgVector 数据库信息）
+#  datasource:
+#    url: xxx
+#    username: root
+#    password: 123456
+  ai:
+    # 多个模型供应商共存时，指定对话/向量化分别用哪家（Spring AI 1.0 的正确开关）
+    model:
+      chat: openai      # 对话用 OpenAI 兼容接口（中科大网关）
+      embedding: ollama # 向量化用本地 Ollama（中科大网关无 embedding）
+    openai:
+      # 中科大 LLM 网关（OpenAI 兼容协议）
+      base-url: https://api.llm.ustc.edu.cn
+      # 密钥通过环境变量注入，不要提交明文：export SPRING_AI_OPENAI_API_KEY=xxx
+      api-key: ${SPRING_AI_OPENAI_API_KEY:}
+      chat:
+        options:
+          model: qwen-chat
+    ollama:
+      base-url: http://localhost:11434
+      # 向量化（RAG 知识库）用的本地 Ollama embedding 模型
+      embedding:
+        model: nomic-embed-text
+# MCP 客户端：图片搜索服务走 SSE（需先单独启动 image-search-mcp-server，端口 8127）
+    mcp:
+      client:
+        sse:
+          connections:
+            server1:
+              url: http://localhost:8127
+#        stdio:
+#          servers-configuration: classpath:mcp-servers.json
+# 临时注释掉，便于大家开发调试和部署（实际需要启动 PgVector 数据库）
+#    vectorstore:
+#      pgvector:
+#        index-type: HNSW
+#        dimensions: 1536
+#        distance-type: COSINE_DISTANCE
+#        max-document-batch-size: 10000 # Optional: Maximum number of documents per batch
+server:
+  port: 8123
+  servlet:
+    context-path: /api
+# springdoc-openapi config
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
+      packages-to-scan: com.travel.ai.controller
+# knife4j config
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+# searchAPI
+search-api:
+  # 需要替换为你自己的 key（通过环境变量注入：export SEARCH_API_API_KEY=xxx）
+  api-key: ${SEARCH_API_API_KEY:}
+# 修改日志级别，查看 Spring AI 更多调用细节
+logging:
+  level:
+    org.springframework.ai: DEBUG
